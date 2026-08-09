@@ -1,0 +1,31 @@
+[project]
+name = "retrieval-funnel"
+version = "0.1.0"
+description = "retrieval_funnel"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "datasets>=4.2.0",
+    "fastembed>=0.7.1",
+    "qdrant-client>=1.15.1",
+    "sentence-transformers>=5.1.1",
+    "svlearn-bootcamp>=0.1.7",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+# If you also build sdists and want data included:
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    # ... other includes like README, pyproject.toml, etc.
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/retrieval_funnel"]
