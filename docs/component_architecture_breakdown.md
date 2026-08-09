@@ -1,9 +1,10 @@
 # Retrieval Funnel: Component Architecture Breakdown
 
-This document provides a component-by-component architectural breakdown of the retrieval funnel pipeline implemented in this project. Use the interactive carousel below to cycle through the overview and the individual components: Matryoshka Representation Learning, SPLADE Sparse Lexical Retrieval, and ColBERT Late Interaction.
+This document provides a component-by-component architectural breakdown of the retrieval funnel pipeline implemented in this project.
 
-````carousel
-# 📋 Stage 0: The Retrieval Funnel Big Picture
+---
+
+## 📋 Stage 0: The Retrieval Funnel Big Picture
 
 The retrieval funnel chains different models in order of **increasing per-document cost and accuracy**. By executing nested server-side Qdrant `prefetch` queries, it retrieves the bulk of the corpus cheaply, merges semantic and lexical search paths, and performs high-fidelity ranking at the very end.
 
@@ -43,8 +44,9 @@ flowchart TD
 2. **Parallel Hybrid Recall**: Dense (Matryoshka) and Sparse (SPLADE) retrieval run in parallel to capture both conceptual semantics and exact terms.
 3. **Early Stage Recall Priority**: Early stages focus strictly on high recall, while later stages optimize for precision.
 
-<!-- slide -->
-# 🧸 Component 1: Matryoshka Representation Learning (MRL)
+---
+
+## 🧸 Component 1: Matryoshka Representation Learning (MRL)
 
 Matryoshka embeddings are trained so that their leading dimensions carry the coarsest, most important semantic structure, while subsequent dimensions add finer details. This allows us to perform a very fast Approximate Nearest Neighbor (ANN) search over small 64-d vectors, and then refine only the top 500 candidates using the full 768-d vectors.
 
@@ -88,8 +90,9 @@ flowchart TD
 ### Why it works:
 During training, the loss function is evaluated simultaneously on multiple prefixes (`u[1:64]`, `u[1:128]`, `u[1:768]`). This forces the encoder to package primary information (like subject classifications) in the first few dimensions.
 
-<!-- slide -->
-# 🔍 Component 2: SPLADE Sparse Lexical Retrieval
+---
+
+## 🔍 Component 2: SPLADE Sparse Lexical Retrieval
 
 SPLADE yields **sparse vectors** across a 30,000 WordPiece vocabulary. Unlike BM25 which computes static frequency scores, SPLADE leverages a transformer MLM head to compute contextual weights and perform **term expansion**, inserting synonyms and related words not found in the original text.
 
@@ -131,8 +134,9 @@ flowchart TD
 ### Why SPLADE is critical:
 It acts as a safety net. While dense embeddings capture broad conceptual overlap, SPLADE handles exact keywords, numbers, jargon, and proper nouns (like "Newton's second law" or "Treaty of Westphalia") that are easily blurred by dense representations.
 
-<!-- slide -->
-# 🤝 Component 3: ColBERT Late Interaction
+---
+
+## 🤝 Component 3: ColBERT Late Interaction
 
 ColBERT sits in the sweet spot between bi-encoders and cross-encoders. Instead of summarizing the entire passage into a single vector, it produces a 128-d vector **for every token**. Interaction is deferred to query-time (hence "late interaction") via a cheap `MaxSim` calculation.
 
@@ -191,4 +195,3 @@ flowchart TD
 
 ### Why it works:
 Because token vectors are contextualized by the transformer prior to projection, the term vectors carry semantic meaning based on context (e.g. "bank" near "river" has a different representation than "bank" near "money"). Document tokens can be precomputed and stored, which is why late-interaction is so efficient compared to Cross-Encoders.
-````
